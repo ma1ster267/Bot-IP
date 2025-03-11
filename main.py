@@ -201,8 +201,6 @@ def bot_info(message):
     )
 
 
-
-
 @bot.message_handler(func=lambda message: message.text == "Для адмінів")
 def edit_homework(message):
     if message.chat.type == 'private':
@@ -217,7 +215,6 @@ def edit_homework(message):
             bot.register_next_step_handler(message, prompt_new_homework)
         else:
             bot.reply_to(message, "<b>😢 Упс, вибачте, але ви не адміністратор. 🚫</b>", parse_mode='HTML')
-
 
 
 @bot.message_handler(func=lambda message: message.text == "Поставити питання❓")
@@ -300,68 +297,65 @@ def handle_homework_input(message):
 
     bot.reply_to(
         message,
-        "Ви можете додати ще текст або завершити редагування.",
+        "Ви можете додати ще текст або натиснути 'Завершити редагування'.",
         reply_markup=create_edit_options_keyboard(),
         parse_mode='HTML'
     )
 
 
 @bot.message_handler(func=lambda message: message.text == "Додати ще текст 📝")
-def add_more_text(message):
+def add_text(message):
     user_id = message.from_user.id
-    bot.reply_to(message, "Надішліть ще частину домашнього завдання:", parse_mode='HTML')
-    bot.register_next_step_handler(message, handle_homework_input)
+    if user_id in user_state:
+        bot.reply_to(
+            message,
+            "Надішліть <b>додатковий текст</b> для домашнього завдання",
+            parse_mode='HTML'
+        )
+        bot.register_next_step_handler(message, handle_homework_input)
 
 
 @bot.message_handler(func=lambda message: message.text == "Завершити редагування ✅")
 def finish_editing(message):
     user_id = message.from_user.id
-    subject = user_state.get(user_id, {}).get("subject")
-    new_homework = user_state.get(user_id, {}).get("new_homework")
-    
-    if subject and new_homework:
-        homework_dict[subject] = new_homework
-        save_homework(homework_dict)  # Передаємо homework_dict у функцію save_homework
-        save_homework_to_github(homework_dict)  # Також зберігаємо на GitHub
-        bot.reply_to(message, "✅ Домашнє завдання оновлено успішно.")
-        user_state.pop(user_id, None)
-    else:
-        bot.reply_to(message, "Помилка: не знайдено домашнє завдання для редагування.")
-    
-    bot.reply_to(
-        message,
-        "Виберіть одну з опцій нижче:",
-        reply_markup=create_main_keyboard(),
-        parse_mode='HTML'
-    )
+    if user_id in user_state:
+        subject = user_state[user_id]["subject"]
+        new_homework = user_state[user_id]["new_homework"]
 
+        if new_homework:
+            homework_dict[subject] = new_homework
+            save_homework(homework_dict)
+            save_homework_to_github(homework_dict)
+
+            bot.reply_to(
+                message,
+                f"<b>Домашнє завдання для {subject}</b> було успішно оновлено.",
+                parse_mode='HTML'
+            )
+        else:
+            bot.reply_to(message, "<b>Завдання не може бути порожнім!</b>", parse_mode='HTML')
+
+        user_state.pop(user_id, None)  # Clear user state after finishing editing
 
 
 @bot.message_handler(func=lambda message: message.text == "Описати питання")
-def new_complaint(message):
-    user_state[message.from_user.id] = 'new_complaint'
-    bot.reply_to(message, "Опишіть ваше питання:")
-
-
-@bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == 'new_complaint')
 def handle_complaint(message):
     user_id = message.from_user.id
     complaint_text = message.text
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    current_time = datetime.now().strftime("%H:%M:%S")
 
-    bot.send_message(
-        ADMIN_IDS,
-        f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
-        f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
-        parse_mode='HTML'
-    )
-
+    # Send complaint to admins
     for admin_id in ADMIN_IDS:
-        bot.send_message(admin_id, complaint_message, parse_mode='HTML')
+        bot.send_message(
+            admin_id, 
+            f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
+            parse_mode='HTML'
+        )
+    
+    bot.reply_to(message, "Ваше питання надіслано адміністратору.")
 
-    bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
-
+# Webhook setup
 if __name__ == "__main__":
-    bot.remove_webhook()  
-    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook") 
-    app.run(host="0.0.0.0", port=10000, debug=True) 
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL + "/webhook")
+    app.run(host="0.0.0.0", port=5000)
