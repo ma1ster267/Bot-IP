@@ -12,9 +12,7 @@ WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
 DB_FILE = "homework.db"
-
 ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Додавайте нові ID сюди
-
 SUPPORT_ID = 5223717297
 
 app = Flask(__name__)
@@ -177,7 +175,7 @@ def bot_info(message):
 @bot.message_handler(func=lambda message: message.text == "Для адмінів")
 def edit_homework(message):
     if message.chat.type == 'private':
-        if message.from_user.id in [ADMIN_IDS]:
+        if message.from_user.id in ADMIN_IDS:  # Видалено зайві квадратні дужки
             bot.reply_to(
                 message,
                 "<b>Виберіть предмет</b> для редагування домашнього завдання:",
@@ -188,6 +186,7 @@ def edit_homework(message):
             bot.register_next_step_handler(message, prompt_new_homework)
         else:
             bot.reply_to(message, "<b>😢 Упс, вибачте, але ви не адміністратор. 🚫</b>", parse_mode='HTML')
+
 
 
 @bot.message_handler(func=lambda message: message.text == "Поставити питання❓")
@@ -312,7 +311,6 @@ def new_complaint(message):
 def handle_complaint(message):
     user_id = message.from_user.id
     complaint_text = message.text
-
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     bot.send_message(
@@ -322,8 +320,10 @@ def handle_complaint(message):
         parse_mode='HTML'
     )
 
-    bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
+    for admin_id in ADMIN_IDS:
+        bot.send_message(admin_id, complaint_message, parse_mode='HTML')
 
+    bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
 
 if __name__ == "__main__":
     bot.remove_webhook()  
