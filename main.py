@@ -330,6 +330,15 @@ def handle_complaint(message):
         parse_mode='HTML'
     )
 
+
+    user_state.pop(user_id, None)
+    bot.reply_to(
+        message,
+        "Виберіть одну з опцій нижче:",
+        reply_markup=create_main_keyboard(),
+        parse_mode='HTML'
+    )
+
 if __name__ == "__main__":
     bot.remove_webhook()
     bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
