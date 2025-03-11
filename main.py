@@ -4,14 +4,26 @@ import json
 import os
 import sqlite3
 from datetime import datetime
+from flask import Flask, request
+
 
 TOKEN = '7805329225:AAEENYaeSeA7afi0Fa2_OUvCTo7rf0aVaO0'
+WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
 DB_FILE = "homework.db"
 OWNER_ID = 5223717297
 SECOND_OWNER_ID = 5223717297
 SUPPORT_ID = 5223717297
+
+pp = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return 'OK'
 
 # Підключення до бази даних
 def connect_db():
@@ -318,5 +330,9 @@ def handle_complaint(message):
         parse_mode='HTML'
     )
 
-
+if __name__ == "__main__":
+    bot.remove_webhook()
+    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
+    app.run(host="0.0.0.0", port=10000)
+    print("База даних ініціалізована.")
 bot.polling(non_stop=True)
