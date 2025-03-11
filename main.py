@@ -314,15 +314,7 @@ def handle_complaint(message):
 
     bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
 
-    user_state.pop(user_id, None)
-    bot.reply_to(
-        message,
-        "Виберіть одну з опцій нижче:",
-        reply_markup=create_main_keyboard(),
-        parse_mode='HTML'
-    )
-
-app = Flask(__name__)
+ app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -331,16 +323,7 @@ def webhook():
     bot.process_new_updates([update])
     return 'OK'
 
-    
-@app.route('/webhook', methods=['POST'])
-def handle_webhook():  # Renamed the function to avoid conflict
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return 'OK'
-
-
 if __name__ == "__main__":
-    bot.remove_webhook()  
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}") 
-    app.run(host="0.0.0.0", port=10000)  
+    bot.remove_webhook()  # Видаляємо попередній вебхук
+    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")  # Встановлюємо новий вебхук
+    app.run(host="0.0.0.0", port=10000, debug=True)  # Запускаємо Flask сервер
