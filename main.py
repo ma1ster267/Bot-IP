@@ -19,7 +19,7 @@ SUPPORT_ID = 5223717297
 GITHUB_TOKEN = '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'  # Вставте ваш GitHub токен тут
 OWNER = 'ma1ster267'  # Ваш GitHub логін
 REPO = 'homework-repo'  # Назва репозиторію на GitHub
-API_URL = f'API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
+API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
 
 app = Flask(__name__)
 
