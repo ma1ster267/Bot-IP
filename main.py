@@ -16,8 +16,6 @@ OWNER_ID = 5223717297
 SECOND_OWNER_ID = 5223717297
 SUPPORT_ID = 5223717297
 
-app = Flask(__name__)
-
 
 # Підключення до бази даних
 def connect_db():
@@ -323,6 +321,8 @@ def handle_complaint(message):
         reply_markup=create_main_keyboard(),
         parse_mode='HTML'
     )
+
+app = Flask(__name__)
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
