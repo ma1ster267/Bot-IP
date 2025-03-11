@@ -16,6 +16,15 @@ OWNER_ID = 5223717297
 SECOND_OWNER_ID = 5223717297
 SUPPORT_ID = 5223717297
 
+app = Flask(__name__)
+
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return 'OK'
+
 
 # Підключення до бази даних
 def connect_db():
@@ -314,14 +323,6 @@ def handle_complaint(message):
 
     bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
 
- app = Flask(__name__)
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return 'OK'
 
 if __name__ == "__main__":
     bot.remove_webhook()  # Видаляємо попередній вебхук
