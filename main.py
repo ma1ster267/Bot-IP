@@ -333,11 +333,12 @@ def webhook():
 
     
 @app.route('/webhook', methods=['POST'])
-def webhook():
+def handle_webhook():  # Renamed the function to avoid conflict
     json_str = request.get_data().decode('UTF-8')
     update = telebot.types.Update.de_json(json_str)
     bot.process_new_updates([update])
     return 'OK'
+
 
 if __name__ == "__main__":
     bot.remove_webhook()  # Removing any previous webhooks
