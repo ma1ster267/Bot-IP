@@ -332,17 +332,16 @@ def webhook():
     return 'OK'
 
     
-    user_state.pop(user_id, None)
-    bot.reply_to(
-        message,
-        "Виберіть одну з опцій нижче:",
-        reply_markup=create_main_keyboard(),
-        parse_mode='HTML'
-    )
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return 'OK'
 
 if __name__ == "__main__":
-    bot.remove_webhook()
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")
-    app.run(host="0.0.0.0", port=10000)
-    print("База даних ініціалізована.")
+    bot.remove_webhook()  # Removing any previous webhooks
+    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")  # Setting the webhook with the correct URL
+    app.run(host="0.0.0.0", port=10000)  # Running Flask app on port 10000
+
 bot.polling(non_stop=True)
