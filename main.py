@@ -341,8 +341,6 @@ def handle_webhook():  # Renamed the function to avoid conflict
 
 
 if __name__ == "__main__":
-    bot.remove_webhook()  # Removing any previous webhooks
-    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}")  # Setting the webhook with the correct URL
-    app.run(host="0.0.0.0", port=10000)  # Running Flask app on port 10000
-
-bot.polling(non_stop=True)
+    bot.remove_webhook()  
+    bot.set_webhook(url=f"{WEBHOOK_URL}/{TOKEN}") 
+    app.run(host="0.0.0.0", port=10000)  
