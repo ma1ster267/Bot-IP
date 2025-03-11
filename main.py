@@ -12,8 +12,9 @@ WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
 DB_FILE = "homework.db"
-OWNER_ID = {1071290377, 5223717297}
-SECOND_OWNER_ID = {1071290377, 5223717297}
+
+ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Додавайте нові ID сюди
+
 SUPPORT_ID = 5223717297
 
 app = Flask(__name__)
@@ -176,7 +177,7 @@ def bot_info(message):
 @bot.message_handler(func=lambda message: message.text == "Для адмінів")
 def edit_homework(message):
     if message.chat.type == 'private':
-        if message.from_user.id in [OWNER_ID, SECOND_OWNER_ID]:
+        if message.from_user.id in [ADMIN_IDS]:
             bot.reply_to(
                 message,
                 "<b>Виберіть предмет</b> для редагування домашнього завдання:",
@@ -315,7 +316,7 @@ def handle_complaint(message):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     bot.send_message(
-        OWNER_ID,
+        ADMIN_IDS,
         f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
         f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
         parse_mode='HTML'
@@ -325,6 +326,6 @@ def handle_complaint(message):
 
 
 if __name__ == "__main__":
-    bot.remove_webhook()  # Видаляємо попередній вебхук
-    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")  # Встановлюємо новий вебхук
-    app.run(host="0.0.0.0", port=10000, debug=True)  # Запускаємо Flask сервер
+    bot.remove_webhook()  
+    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook") 
+    app.run(host="0.0.0.0", port=10000, debug=True) 
