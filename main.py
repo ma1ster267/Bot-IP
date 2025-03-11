@@ -2,10 +2,7 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import json
 import os
-from datetime import datetime
 from flask import Flask, request
-import requests
-import base64
 
 TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
 WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
@@ -14,12 +11,6 @@ bot = telebot.TeleBot(TOKEN)
 HOMEWORK_FILE = "homework.json"
 ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
-
-# GitHub configuration
-GITHUB_TOKEN = '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'  # Вставте ваш GitHub токен тут
-OWNER = 'ma1ster267'  # Ваш GitHub логін
-REPO = 'homework-repo'  # Назва репозиторію на GitHub
-API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
 
 app = Flask(__name__)
 
@@ -69,59 +60,11 @@ def save_homework(homework_dict):
         print("Домашнє завдання успішно збережено у файл.")
     except Exception as e:
         print(f"Помилка при збереженні домашнього завдання у файл: {e}")
-        # Можна додати сповіщення адміністратору або логування
-        # bot.send_message(SUPPORT_ID, f"Помилка збереження домашнього завдання: {e}")
-
-
-
-
-def save_homework_to_github(homework_dict):
-    file_path = 'homework.json'
-    content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
-    
-    # Отримуємо SHA файлу для оновлення на GitHub
-    response = requests.get(API_URL + file_path, headers={
-        'Authorization': f'token {GITHUB_TOKEN}'
-    })
-    
-    if response.status_code == 200:
-        sha = response.json()['sha']
-    else:
-        sha = None
-        print(f"Не вдалося отримати SHA: {response.status_code} - {response.text}")
-        return  # Виходимо з функції, якщо виникла помилка на етапі отримання SHA
-    
-    data = {
-        'message': 'Оновлення домашніх завдань',
-        'content': base64.b64encode(content.encode('utf-8')).decode('utf-8')
-    }
-    
-    if sha:
-        data['sha'] = sha
-    
-    # Оновлення або створення файлу на GitHub
-    response = requests.put(API_URL + file_path, headers={
-        'Authorization': f'token {GITHUB_TOKEN}'
-    }, json=data)
-    
-    if response.status_code in [200, 201]:
-        print(f'Файл успішно {"відредаговано" if sha else "створено"} на GitHub')
-    else:
-        print(f'Помилка при збереженні на GitHub: {response.status_code} - {response.text}')
-        # Можна також сповістити адміністратору
-        # bot.send_message(SUPPORT_ID, f"Помилка при збереженні на GitHub: {response.status_code} - {response.text}")
-
 
 
 # Load the current homework data
 homework_dict = load_homework()
 user_state = {}
-
-# Example to save homework to both the file and GitHub
-save_homework(homework_dict)
-save_homework_to_github(homework_dict)
-
-
 
 
 def create_main_keyboard():
@@ -325,7 +268,6 @@ def finish_editing(message):
         if new_homework:
             homework_dict[subject] = new_homework
             save_homework(homework_dict)
-            save_homework_to_github(homework_dict)
 
             bot.reply_to(
                 message,
