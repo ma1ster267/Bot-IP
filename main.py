@@ -16,7 +16,7 @@ ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 # GitHub configuration
-GITHUB_TOKEN = 'your_fine_grained_github_token'  # Вставте ваш GitHub токен тут
+GITHUB_TOKEN = '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'  # Вставте ваш GitHub токен тут
 OWNER = 'ma1ster267'  # Ваш GitHub логін
 REPO = 'homework-repo'  # Назва репозиторію на GitHub
 API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/'
