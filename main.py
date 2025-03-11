@@ -8,7 +8,7 @@ import requests
 import base64
 
 TOKEN = "7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY"
-WEBHOOK_URL = os.getenv('https://bot-ip-odhy.onrender.com')  # Отримання URL з змінної середовища
+WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'
 bot = telebot.TeleBot(TOKEN)
 
 HOMEWORK_FILE = "homework.json"
