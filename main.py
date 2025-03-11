@@ -18,7 +18,7 @@ SUPPORT_ID = 5223717297
 
 pp = Flask(__name__)
 
-@app.route('/webhook', methods=['POST'])
+@pp.route('/webhook', methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
     update = telebot.types.Update.de_json(json_str)
