@@ -12,8 +12,8 @@ WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
 DB_FILE = "homework.db"
-OWNER_ID = 5223717297
-SECOND_OWNER_ID = 1071290377
+OWNER_ID = {1071290377, 5223717297}
+SECOND_OWNER_ID = {1071290377, 5223717297}
 SUPPORT_ID = 5223717297
 
 app = Flask(__name__)
