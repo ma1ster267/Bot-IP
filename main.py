@@ -2,17 +2,15 @@ import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import json
 import os
-import sqlite3
 from datetime import datetime
 from flask import Flask, request
-
 
 TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
 WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
-DB_FILE = "homework.db"
-ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Додавайте нові ID сюди
+HOMEWORK_FILE = "homework.json"
+ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 app = Flask(__name__)
@@ -25,38 +23,16 @@ def webhook():
     return 'OK'
 
 
-# Підключення до бази даних
-def connect_db():
-    conn = sqlite3.connect(DB_FILE)
-    return conn
-
-# Створення таблиці в базі даних
-def create_table():
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS homework (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            data TEXT
-        )
-    """)
-    conn.commit()
-    conn.close()
-
-# Завантаження домашнього завдання з бази даних
+# Load homework from the file
 def load_homework():
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute("SELECT data FROM homework ORDER BY id DESC LIMIT 1")
-    row = cursor.fetchone()
-    conn.close()
-
-    if row:
-        return json.loads(row[0])
+    if os.path.exists(HOMEWORK_FILE):
+        with open(HOMEWORK_FILE, 'r', encoding='utf-8') as file:
+            return json.load(file)
     else:
         return create_default_homework()
 
-# Створення стандартного домашнього завдання
+
+# Create default homework
 def create_default_homework():
     return {
         "фізика 🪐": "",
@@ -77,20 +53,17 @@ def create_default_homework():
         "іноземна мова(ляшенко)": "",
     }
 
-# Збереження домашнього завдання в базі даних
+
+# Save homework to the file
 def save_homework(homework_dict):
-    conn = connect_db()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO homework (data) VALUES (?)", (json.dumps(homework_dict),))
-    conn.commit()
-    conn.close()
+    with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
+        json.dump(homework_dict, file, ensure_ascii=False, indent=4)
 
-# Ініціалізація бази даних та таблиці
-create_table()
 
-# Завантаження домашнього завдання
+# Load the current homework data
 homework_dict = load_homework()
 user_state = {}
+
 
 
 def create_main_keyboard():
