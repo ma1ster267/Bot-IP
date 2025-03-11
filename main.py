@@ -62,7 +62,6 @@ def create_default_homework():
     }
 
 
-# Save homework to the file
 def save_homework(homework_dict):
     try:
         with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
@@ -70,15 +69,17 @@ def save_homework(homework_dict):
         print("Домашнє завдання успішно збережено у файл.")
     except Exception as e:
         print(f"Помилка при збереженні домашнього завдання у файл: {e}")
+        # Можна додати сповіщення адміністратору або логування
+        # bot.send_message(SUPPORT_ID, f"Помилка збереження домашнього завдання: {e}")
 
 
 
-# Save homework to GitHub
+
 def save_homework_to_github(homework_dict):
     file_path = 'homework.json'
     content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
     
-    # Отримуємо SHA файлу для оновлення
+    # Отримуємо SHA файлу для оновлення на GitHub
     response = requests.get(API_URL + file_path, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     })
@@ -88,6 +89,7 @@ def save_homework_to_github(homework_dict):
     else:
         sha = None
         print(f"Не вдалося отримати SHA: {response.status_code} - {response.text}")
+        return  # Виходимо з функції, якщо виникла помилка на етапі отримання SHA
     
     data = {
         'message': 'Оновлення домашніх завдань',
@@ -106,6 +108,8 @@ def save_homework_to_github(homework_dict):
         print(f'Файл успішно {"відредаговано" if sha else "створено"} на GitHub')
     else:
         print(f'Помилка при збереженні на GitHub: {response.status_code} - {response.text}')
+        # Можна також сповістити адміністратору
+        # bot.send_message(SUPPORT_ID, f"Помилка при збереженні на GitHub: {response.status_code} - {response.text}")
 
 
 
