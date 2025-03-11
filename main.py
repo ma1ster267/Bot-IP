@@ -324,11 +324,11 @@ def finish_editing(message):
 
 
 
+# Handle complaints
 @bot.message_handler(func=lambda message: message.text == "Описати питання")
 def new_complaint(message):
     user_state[message.from_user.id] = 'new_complaint'
     bot.reply_to(message, "Опишіть ваше питання:")
-
 
 @bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == 'new_complaint')
 def handle_complaint(message):
@@ -336,17 +336,16 @@ def handle_complaint(message):
     complaint_text = message.text
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    bot.send_message(
-        ADMIN_IDS,
-        f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
-        f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
-        parse_mode='HTML'
-    )
-
     for admin_id in ADMIN_IDS:
-        bot.send_message(admin_id, complaint_message, parse_mode='HTML')
+        bot.send_message(
+            admin_id,
+            f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
+            f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
+            parse_mode='HTML'
+        )
 
     bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
+
 
 if __name__ == "__main__":
     bot.remove_webhook()  
