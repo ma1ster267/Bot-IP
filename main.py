@@ -7,7 +7,7 @@ from flask import Flask, request
 import requests
 import base64
 
-TOKEN = 'YOUR_TOKEN'
+TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
 WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
@@ -16,7 +16,7 @@ ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 # GitHub configuration
-GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN'  # Replace with your GitHub token
+GITHUB_TOKEN = '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'  # Вставте ваш GitHub токен тут
 OWNER = 'ma1ster267'  # Your GitHub login
 REPO = 'homework-repo'  # Repo name on GitHub
 API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
