@@ -1,86 +1,66 @@
 import telebot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
-import json
-import os
-from datetime import datetime
 from flask import Flask, request
+from flask_sqlalchemy import SQLAlchemy
 import requests
 import base64
+from datetime import datetime
 
 TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
 WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
-HOMEWORK_FILE = "homework.json"
+# Flask and SQLAlchemy setup
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///homework.db'  # SQLite database
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Admins configuration
 ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 # GitHub configuration
-GITHUB_TOKEN = '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'  # Вставте ваш GitHub токен тут
-OWNER = 'ma1ster267'  # Ваш GitHub логін
-REPO = 'homework-repo'  # Назва репозиторію на GitHub
+GITHUB_TOKEN = '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'
+OWNER = 'ma1ster267'
+REPO = 'homework-repo'
 API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
 
+# Database model for homework
+class Homework(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subject = db.Column(db.String(100), unique=True, nullable=False)
+    task = db.Column(db.String(1000), nullable=True)
 
-app = Flask(__name__)
+    def __repr__(self):
+        return f"Homework('{self.subject}', '{self.task}')"
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return 'OK'
+# Create tables
+db.create_all()
 
-
-# Load homework from the file
+# Function to load homework from the database
 def load_homework():
-    if os.path.exists(HOMEWORK_FILE):
-        with open(HOMEWORK_FILE, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    else:
-        return create_default_homework()
+    homework_list = Homework.query.all()
+    homework_dict = {homework.subject: homework.task for homework in homework_list}
+    return homework_dict
 
-
-# Create default homework
-def create_default_homework():
-    return {
-        "фізика 🪐": "",
-        "фізкультура 🏋️‍♂️": "",
-        "географія 🌍": "",
-        "технології ⚙️": "",
-        "історія україни ⚔️": "",
-        "зарубіжна література 📚": "",
-        "всесвітня історія ⚔️": "",
-        "хімія 🧪": "",
-        "інформатика 💻": "",
-        "захист україни 🪖": "",
-        "українська мова 📝": "",
-        "українська література 📖": "",
-        "математика ➗": "",
-        "біологія 🦠": "",
-        "іноземна мова(лин)": "",
-        "іноземна мова(ляшенко)": "",
-    }
-
-
+# Function to save homework to the database
 def save_homework(homework_dict):
-    try:
-        with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
-            json.dump(homework_dict, file, ensure_ascii=False, indent=4)
-        print("Домашнє завдання успішно збережено у файл.")
-    except Exception as e:
-        print(f"Помилка при збереженні домашнього завдання у файл: {e}")
-        # Можна додати сповіщення адміністратору або логування
-        # bot.send_message(SUPPORT_ID, f"Помилка збереження домашнього завдання: {e}")
+    for subject, task in homework_dict.items():
+        homework = Homework.query.filter_by(subject=subject).first()
+        if homework:
+            homework.task = task
+        else:
+            new_homework = Homework(subject=subject, task=task)
+            db.session.add(new_homework)
+    db.session.commit()
 
-
-
-
+# Function to save homework to GitHub
 def save_homework_to_github(homework_dict):
     file_path = 'homework.json'
     content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
     
-    # Отримуємо SHA файлу для оновлення на GitHub
+    # Get SHA of the file to update it on GitHub
     response = requests.get(API_URL + file_path, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     })
@@ -89,42 +69,36 @@ def save_homework_to_github(homework_dict):
         sha = response.json()['sha']
     else:
         sha = None
-        print(f"Не вдалося отримати SHA: {response.status_code} - {response.text}")
-        return  # Виходимо з функції, якщо виникла помилка на етапі отримання SHA
+        print(f"Failed to get SHA: {response.status_code} - {response.text}")
+        return  # Exit if error on getting SHA
     
     data = {
-        'message': 'Оновлення домашніх завдань',
+        'message': 'Update homework',
         'content': base64.b64encode(content.encode('utf-8')).decode('utf-8')
     }
     
     if sha:
         data['sha'] = sha
     
-    # Оновлення або створення файлу на GitHub
+    # Update or create file on GitHub
     response = requests.put(API_URL + file_path, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     }, json=data)
     
     if response.status_code in [200, 201]:
-        print(f'Файл успішно {"відредаговано" if sha else "створено"} на GitHub')
+        print(f'File successfully {"updated" if sha else "created"} on GitHub')
     else:
-        print(f'Помилка при збереженні на GitHub: {response.status_code} - {response.text}')
-        # Можна також сповістити адміністратору
-        # bot.send_message(SUPPORT_ID, f"Помилка при збереженні на GitHub: {response.status_code} - {response.text}")
-
-
+        print(f'Error saving to GitHub: {response.status_code} - {response.text}')
 
 # Load the current homework data
 homework_dict = load_homework()
-user_state = {}
 
-# Example to save homework to both the file and GitHub
+# Save homework to the database and GitHub
 save_homework(homework_dict)
 save_homework_to_github(homework_dict)
 
 
-
-
+# Create the keyboards
 def create_main_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     button1 = KeyboardButton("ДЗ 📖")
@@ -161,6 +135,7 @@ def create_support_keyboard():
     return keyboard
 
 
+# Bot message handlers
 @bot.message_handler(commands=["start"])
 def start(message):
     if message.chat.type == 'private':
@@ -202,56 +177,29 @@ def bot_info(message):
     )
 
 
-
-
 @bot.message_handler(func=lambda message: message.text == "Для адмінів")
 def edit_homework(message):
     if message.chat.type == 'private':
-        if message.from_user.id in ADMIN_IDS:  # Видалено зайві квадратні дужки
+        if message.from_user.id in ADMIN_IDS:
             bot.reply_to(
                 message,
                 "<b>Виберіть предмет</b> для редагування домашнього завдання:",
                 reply_markup=create_subjects_keyboard(),
                 parse_mode='HTML'
             )
-            user_state[message.from_user.id] = 'editing_homework'
-            bot.register_next_step_handler(message, prompt_new_homework)
         else:
             bot.reply_to(message, "<b>😢 Упс, вибачте, але ви не адміністратор. 🚫</b>", parse_mode='HTML')
-
-
-
-@bot.message_handler(func=lambda message: message.text == "Поставити питання❓")
-def support(message):
-    if message.chat.type == 'private':
-        bot.reply_to(
-            message,
-            "Якщо ви хочете поставити питання адміністратору, натискайте 'Описати питання' або поверніться назад.",
-            reply_markup=create_support_keyboard(),
-            parse_mode='HTML'
-        )
 
 
 @bot.message_handler(func=lambda message: message.text == "Назад ⬅️")
 def go_back(message):
     if message.chat.type == 'private':
-        user_id = message.from_user.id
-        if user_id in user_state and user_state[user_id] == 'editing_homework':
-            bot.reply_to(
-                message,
-                "<b>Редагування скасовано.</b> Ви повернулись до вибору предмета.",
-                reply_markup=create_subjects_keyboard(),
-                parse_mode='HTML'
-            )
-            user_state[user_id] = 'viewing_homework'
-        else:
-            bot.reply_to(
-                message,
-                "Виберіть одну з опцій нижче:",
-                reply_markup=create_main_keyboard(),
-                parse_mode='HTML'
-            )
-            user_state[user_id] = 'viewing_homework'
+        bot.reply_to(
+            message,
+            "Виберіть одну з опцій нижче:",
+            reply_markup=create_main_keyboard(),
+            parse_mode='HTML'
+        )
 
 
 @bot.message_handler(func=lambda message: message.text in homework_dict)
@@ -277,92 +225,7 @@ def handle_subject(message):
     )
 
 
-def prompt_new_homework(message):
-    subject = message.text
-    if subject in homework_dict:
-        bot.reply_to(message,
-                     f"Надішліть <b>нове завдання</b> для {subject}",
-                     parse_mode='HTML')
-        user_state[message.from_user.id] = {'subject': subject, 'new_homework': ''}
-        bot.register_next_step_handler(message, handle_homework_input)
-    else:
-        bot.reply_to(message, "<b>Невідомий предмет.</b> Спробуйте ще раз.", parse_mode='HTML')
-
-
-def handle_homework_input(message):
-    user_id = message.from_user.id
-    subject = user_state[user_id]["subject"]
-
-    if message.text:
-        if user_state[user_id]["new_homework"]:
-            user_state[user_id]["new_homework"] += "\n\n" + message.text
-        else:
-            user_state[user_id]["new_homework"] = message.text
-
-    bot.reply_to(
-        message,
-        "Ви можете додати ще текст або завершити редагування.",
-        reply_markup=create_edit_options_keyboard(),
-        parse_mode='HTML'
-    )
-
-
-@bot.message_handler(func=lambda message: message.text == "Додати ще текст 📝")
-def add_more_text(message):
-    user_id = message.from_user.id
-    bot.reply_to(message, "Надішліть ще частину домашнього завдання:", parse_mode='HTML')
-    bot.register_next_step_handler(message, handle_homework_input)
-
-
-@bot.message_handler(func=lambda message: message.text == "Завершити редагування ✅")
-def finish_editing(message):
-    user_id = message.from_user.id
-    subject = user_state.get(user_id, {}).get("subject")
-    new_homework = user_state.get(user_id, {}).get("new_homework")
-    
-    if subject and new_homework:
-        homework_dict[subject] = new_homework
-        save_homework(homework_dict)  # Передаємо homework_dict у функцію save_homework
-        save_homework_to_github(homework_dict)  # Також зберігаємо на GitHub
-        bot.reply_to(message, "✅ Домашнє завдання оновлено успішно.")
-        user_state.pop(user_id, None)
-    else:
-        bot.reply_to(message, "Помилка: не знайдено домашнє завдання для редагування.")
-    
-    bot.reply_to(
-        message,
-        "Виберіть одну з опцій нижче:",
-        reply_markup=create_main_keyboard(),
-        parse_mode='HTML'
-    )
-
-
-
-@bot.message_handler(func=lambda message: message.text == "Описати питання")
-def new_complaint(message):
-    user_state[message.from_user.id] = 'new_complaint'
-    bot.reply_to(message, "Опишіть ваше питання:")
-
-
-@bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == 'new_complaint')
-def handle_complaint(message):
-    user_id = message.from_user.id
-    complaint_text = message.text
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    bot.send_message(
-        ADMIN_IDS,
-        f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
-        f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
-        parse_mode='HTML'
-    )
-
-    for admin_id in ADMIN_IDS:
-        bot.send_message(admin_id, complaint_message, parse_mode='HTML')
-
-    bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
-
 if __name__ == "__main__":
-    bot.remove_webhook()  
-    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook") 
-    app.run(host="0.0.0.0", port=10000, debug=True) 
+    bot.remove_webhook()
+    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
+    app.run(host="0.0.0.0", port=10000, debug=True)
