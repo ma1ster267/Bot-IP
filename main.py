@@ -4,6 +4,8 @@ import json
 import os
 from datetime import datetime
 from flask import Flask, request
+import requests
+import base64
 
 TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
 WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
@@ -12,6 +14,12 @@ bot = telebot.TeleBot(TOKEN)
 HOMEWORK_FILE = "homework.json"
 ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
+
+# GitHub configuration
+GITHUB_TOKEN = 'your_fine_grained_github_token'  # Вставте ваш GitHub токен тут
+OWNER = 'ma1ster267'  # Ваш GitHub логін
+REPO = 'homework-repo'  # Назва репозиторію на GitHub
+API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/'
 
 app = Flask(__name__)
 
@@ -60,9 +68,45 @@ def save_homework(homework_dict):
         json.dump(homework_dict, file, ensure_ascii=False, indent=4)
 
 
+# Save homework to GitHub
+def save_homework_to_github(homework_dict):
+    file_path = 'homework.json'
+    content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
+    
+    response = requests.get(API_URL + file_path, headers={
+        'Authorization': f'token {GITHUB_TOKEN}'
+    })
+    
+    sha = None
+    if response.status_code == 200:
+        sha = response.json()['sha']
+    
+    data = {
+        'message': 'Оновлення домашніх завдань',
+        'content': base64.b64encode(content.encode('utf-8')).decode('utf-8')
+    }
+    
+    if sha:
+        data['sha'] = sha
+    
+    response = requests.put(API_URL + file_path, headers={
+        'Authorization': f'token {GITHUB_TOKEN}'
+    }, json=data)
+    
+    if response.status_code in [200, 201]:
+        print(f'Файл успішно {"відредаговано" if sha else "створено"} на GitHub')
+    else:
+        print(f'Помилка: {response.status_code} - {response.text}')
+
+
 # Load the current homework data
 homework_dict = load_homework()
 user_state = {}
+
+# Example to save homework to both the file and GitHub
+save_homework(homework_dict)
+save_homework_to_github(homework_dict)
+
 
 
 
