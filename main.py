@@ -7,8 +7,8 @@ from flask import Flask, request
 import requests
 import base64
 
-TOKEN = "7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY"
-WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'
+TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
+WEBHOOK_URL = "https://bot-ip-odhy.onrender.com"
 bot = telebot.TeleBot(TOKEN)
 
 HOMEWORK_FILE = "homework.json"
@@ -16,16 +16,20 @@ ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 # GitHub configuration
-GITHUB_TOKEN = os.getenv('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')  # Отримання GitHub токену з змінної середовища
-OWNER = 'ma1ster267'
-REPO = 'homework-repo'
-API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
-
+GITHUB_TOKEN = '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'  # Вставте ваш GitHub токен тут
+OWNER = 'ma1ster267'  # Ваш GitHub логін
+REPO = 'homework-repo'  # Назва репозиторію на GitHub
+API_URL = f'API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
 
 app = Flask(__name__)
 
-# Initialize user state
-user_state = {}
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return 'OK'
+
 
 # Load homework from the file
 def load_homework():
@@ -34,6 +38,7 @@ def load_homework():
             return json.load(file)
     else:
         return create_default_homework()
+
 
 # Create default homework
 def create_default_homework():
@@ -56,12 +61,69 @@ def create_default_homework():
         "іноземна мова(ляшенко)": "",
     }
 
-# Initialize homework dictionary
+
+def save_homework(homework_dict):
+    try:
+        with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
+            json.dump(homework_dict, file, ensure_ascii=False, indent=4)
+        print("Домашнє завдання успішно збережено у файл.")
+    except Exception as e:
+        print(f"Помилка при збереженні домашнього завдання у файл: {e}")
+        # Можна додати сповіщення адміністратору або логування
+        # bot.send_message(SUPPORT_ID, f"Помилка збереження домашнього завдання: {e}")
+
+
+
+
+def save_homework_to_github(homework_dict):
+    file_path = 'homework.json'
+    content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
+    
+    # Отримуємо SHA файлу для оновлення на GitHub
+    response = requests.get(API_URL + file_path, headers={
+        'Authorization': f'token {GITHUB_TOKEN}'
+    })
+    
+    if response.status_code == 200:
+        sha = response.json()['sha']
+    else:
+        sha = None
+        print(f"Не вдалося отримати SHA: {response.status_code} - {response.text}")
+        return  # Виходимо з функції, якщо виникла помилка на етапі отримання SHA
+    
+    data = {
+        'message': 'Оновлення домашніх завдань',
+        'content': base64.b64encode(content.encode('utf-8')).decode('utf-8')
+    }
+    
+    if sha:
+        data['sha'] = sha
+    
+    # Оновлення або створення файлу на GitHub
+    response = requests.put(API_URL + file_path, headers={
+        'Authorization': f'token {GITHUB_TOKEN}'
+    }, json=data)
+    
+    if response.status_code in [200, 201]:
+        print(f'Файл успішно {"відредаговано" if sha else "створено"} на GitHub')
+    else:
+        print(f'Помилка при збереженні на GitHub: {response.status_code} - {response.text}')
+        # Можна також сповістити адміністратору
+        # bot.send_message(SUPPORT_ID, f"Помилка при збереженні на GitHub: {response.status_code} - {response.text}")
+
+
+
+# Load the current homework data
 homework_dict = load_homework()
+user_state = {}
 
-# The rest of your bot logic goes here...
+# Example to save homework to both the file and GitHub
+save_homework(homework_dict)
+save_homework_to_github(homework_dict)
 
-# Create the main keyboard for the bot
+
+
+
 def create_main_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     button1 = KeyboardButton("ДЗ 📖")
@@ -74,7 +136,6 @@ def create_main_keyboard():
     return keyboard
 
 
-# Create a keyboard for subject selection
 def create_subjects_keyboard():
     keyboard = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     for subject in homework_dict.keys():
@@ -83,7 +144,6 @@ def create_subjects_keyboard():
     return keyboard
 
 
-# Create keyboard for editing options (add more text or finish editing)
 def create_edit_options_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     button_add_text = KeyboardButton("Додати ще текст 📝")
@@ -92,7 +152,6 @@ def create_edit_options_keyboard():
     return keyboard
 
 
-# Create support keyboard
 def create_support_keyboard():
     keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
     button_complaint = KeyboardButton("Описати питання")
@@ -101,7 +160,6 @@ def create_support_keyboard():
     return keyboard
 
 
-# Handle /start command to initialize the bot
 @bot.message_handler(commands=["start"])
 def start(message):
     if message.chat.type == 'private':
@@ -114,7 +172,6 @@ def start(message):
         )
 
 
-# Handle the "ДЗ 📖" button
 @bot.message_handler(func=lambda message: message.text == "ДЗ 📖")
 def get_homework(message):
     if message.chat.type == 'private':
@@ -126,7 +183,6 @@ def get_homework(message):
         )
 
 
-# Handle the "Інформація" button
 @bot.message_handler(func=lambda message: message.text == "Інформація")
 def bot_info(message):
     bot.send_message(
@@ -145,11 +201,12 @@ def bot_info(message):
     )
 
 
-# Handle the "Для адмінів" button (editing homework)
+
+
 @bot.message_handler(func=lambda message: message.text == "Для адмінів")
 def edit_homework(message):
     if message.chat.type == 'private':
-        if message.from_user.id in ADMIN_IDS:
+        if message.from_user.id in ADMIN_IDS:  # Видалено зайві квадратні дужки
             bot.reply_to(
                 message,
                 "<b>Виберіть предмет</b> для редагування домашнього завдання:",
@@ -162,7 +219,7 @@ def edit_homework(message):
             bot.reply_to(message, "<b>😢 Упс, вибачте, але ви не адміністратор. 🚫</b>", parse_mode='HTML')
 
 
-# Handle the "Поставити питання❓" button (support)
+
 @bot.message_handler(func=lambda message: message.text == "Поставити питання❓")
 def support(message):
     if message.chat.type == 'private':
@@ -174,7 +231,6 @@ def support(message):
         )
 
 
-# Handle the "Назад ⬅️" button (go back to the previous menu)
 @bot.message_handler(func=lambda message: message.text == "Назад ⬅️")
 def go_back(message):
     if message.chat.type == 'private':
@@ -197,7 +253,6 @@ def go_back(message):
             user_state[user_id] = 'viewing_homework'
 
 
-# Handle selecting a subject to view homework
 @bot.message_handler(func=lambda message: message.text in homework_dict)
 def handle_subject(message):
     subject = message.text
@@ -221,7 +276,6 @@ def handle_subject(message):
     )
 
 
-# Prompt for new homework content
 def prompt_new_homework(message):
     subject = message.text
     if subject in homework_dict:
@@ -234,7 +288,6 @@ def prompt_new_homework(message):
         bot.reply_to(message, "<b>Невідомий предмет.</b> Спробуйте ще раз.", parse_mode='HTML')
 
 
-# Handle input of new homework content
 def handle_homework_input(message):
     user_id = message.from_user.id
     subject = user_state[user_id]["subject"]
@@ -253,7 +306,6 @@ def handle_homework_input(message):
     )
 
 
-# Handle adding more text to homework
 @bot.message_handler(func=lambda message: message.text == "Додати ще текст 📝")
 def add_more_text(message):
     user_id = message.from_user.id
@@ -261,7 +313,6 @@ def add_more_text(message):
     bot.register_next_step_handler(message, handle_homework_input)
 
 
-# Handle finishing editing the homework
 @bot.message_handler(func=lambda message: message.text == "Завершити редагування ✅")
 def finish_editing(message):
     user_id = message.from_user.id
@@ -270,8 +321,8 @@ def finish_editing(message):
     
     if subject and new_homework:
         homework_dict[subject] = new_homework
-        save_homework(homework_dict)  # Save homework to file
-        save_homework_to_github(homework_dict)  # Save homework to GitHub
+        save_homework(homework_dict)  # Передаємо homework_dict у функцію save_homework
+        save_homework_to_github(homework_dict)  # Також зберігаємо на GitHub
         bot.reply_to(message, "✅ Домашнє завдання оновлено успішно.")
         user_state.pop(user_id, None)
     else:
@@ -285,32 +336,32 @@ def finish_editing(message):
     )
 
 
-# Handle complaints
+
 @bot.message_handler(func=lambda message: message.text == "Описати питання")
 def new_complaint(message):
     user_state[message.from_user.id] = 'new_complaint'
     bot.reply_to(message, "Опишіть ваше питання:")
 
-# Handle submitted complaints
+
 @bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == 'new_complaint')
 def handle_complaint(message):
     user_id = message.from_user.id
     complaint_text = message.text
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+    bot.send_message(
+        ADMIN_IDS,
+        f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
+        f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
+        parse_mode='HTML'
+    )
+
     for admin_id in ADMIN_IDS:
-        bot.send_message(
-            admin_id,
-            f"🔴 <b>Нове питання</b>\n\n📝 <b>Питання</b> від користувача {message.from_user.first_name} (ID: {user_id}, @ {message.from_user.username})\n"
-            f"⏰ <b>Час:</b> {current_time}\n\n<b>Питання:</b> {complaint_text}",
-            parse_mode='HTML'
-        )
+        bot.send_message(admin_id, complaint_message, parse_mode='HTML')
 
     bot.reply_to(message, "✅ Ваше питання було надіслано адміністратору. Дякуємо за звернення!")
 
-
-# Run the Flask app
 if __name__ == "__main__":
     bot.remove_webhook()  
-    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook")
-    app.run(host="0.0.0.0", port=10000, debug=True)
+    bot.set_webhook(url=f"{WEBHOOK_URL}/webhook") 
+    app.run(host="0.0.0.0", port=10000, debug=True) 
