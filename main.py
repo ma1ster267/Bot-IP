@@ -7,7 +7,7 @@ from flask import Flask, request
 import requests
 import base64
 
-TOKEN = os.getenv('7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY')  # Store this securely in environment variables
+TOKEN = "7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY"
 WEBHOOK_URL = os.getenv('https://bot-ip-odhy.onrender.com')  # Store this securely
 bot = telebot.TeleBot(TOKEN)
 
