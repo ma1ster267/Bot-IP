@@ -7,8 +7,8 @@ from flask import Flask, request
 import requests
 import base64
 
-TOKEN = os.getenv('BOT_TOKEN')  # Store this securely in environment variables
-WEBHOOK_URL = os.getenv('WEBHOOK_URL')  # Store this securely
+TOKEN = os.getenv('7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY')  # Store this securely in environment variables
+WEBHOOK_URL = os.getenv('https://bot-ip-odhy.onrender.com')  # Store this securely
 bot = telebot.TeleBot(TOKEN)
 
 HOMEWORK_FILE = "homework.json"
@@ -16,7 +16,7 @@ ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 # GitHub configuration
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')  # Store this securely in environment variables
+GITHUB_TOKEN = os.getenv('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')  # Store this securely in environment variables
 OWNER = 'ma1ster267'
 REPO = 'homework-repo'
 API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
