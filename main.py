@@ -8,7 +8,7 @@ import requests
 import base64
 
 TOKEN = "7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY"
-WEBHOOK_URL = os.getenv('https://bot-ip-odhy.onrender.com')  # Store this securely
+WEBHOOK_URL = os.getenv('https://bot-ip-odhy.onrender.com')  # Отримання URL з змінної середовища
 bot = telebot.TeleBot(TOKEN)
 
 HOMEWORK_FILE = "homework.json"
@@ -16,10 +16,11 @@ ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Add new IDs here
 SUPPORT_ID = 5223717297
 
 # GitHub configuration
-GITHUB_TOKEN = os.getenv('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')  # Store this securely in environment variables
+GITHUB_TOKEN = os.getenv('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')  # Отримання GitHub токену з змінної середовища
 OWNER = 'ma1ster267'
 REPO = 'homework-repo'
 API_URL = f'https://api.github.com/repos/{OWNER}/{REPO}/contents/homework.json'
+
 
 app = Flask(__name__)
 
