@@ -64,8 +64,13 @@ def create_default_homework():
 
 # Save homework to the file
 def save_homework(homework_dict):
-    with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
-        json.dump(homework_dict, file, ensure_ascii=False, indent=4)
+    try:
+        with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
+            json.dump(homework_dict, file, ensure_ascii=False, indent=4)
+        print("Домашнє завдання успішно збережено у файл.")
+    except Exception as e:
+        print(f"Помилка при збереженні домашнього завдання у файл: {e}")
+
 
 
 # Save homework to GitHub
@@ -73,13 +78,16 @@ def save_homework_to_github(homework_dict):
     file_path = 'homework.json'
     content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
     
+    # Отримуємо SHA файлу для оновлення
     response = requests.get(API_URL + file_path, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     })
     
-    sha = None
     if response.status_code == 200:
         sha = response.json()['sha']
+    else:
+        sha = None
+        print(f"Не вдалося отримати SHA: {response.status_code} - {response.text}")
     
     data = {
         'message': 'Оновлення домашніх завдань',
@@ -89,6 +97,7 @@ def save_homework_to_github(homework_dict):
     if sha:
         data['sha'] = sha
     
+    # Оновлення або створення файлу на GitHub
     response = requests.put(API_URL + file_path, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     }, json=data)
@@ -96,7 +105,8 @@ def save_homework_to_github(homework_dict):
     if response.status_code in [200, 201]:
         print(f'Файл успішно {"відредаговано" if sha else "створено"} на GitHub')
     else:
-        print(f'Помилка: {response.status_code} - {response.text}')
+        print(f'Помилка при збереженні на GitHub: {response.status_code} - {response.text}')
+
 
 
 # Load the current homework data
@@ -302,20 +312,25 @@ def add_more_text(message):
 @bot.message_handler(func=lambda message: message.text == "Завершити редагування ✅")
 def finish_editing(message):
     user_id = message.from_user.id
-    subject = user_state[user_id]["subject"]
-    new_homework = user_state[user_id]["new_homework"]
-
-    homework_dict[subject] = new_homework
-    save_homework(homework_dict)  # Передаємо homework_dict у функцію save_homework
-
-    bot.reply_to(message, "✅ Домашнє завдання оновлено успішно.")
-    user_state.pop(user_id)
+    subject = user_state.get(user_id, {}).get("subject")
+    new_homework = user_state.get(user_id, {}).get("new_homework")
+    
+    if subject and new_homework:
+        homework_dict[subject] = new_homework
+        save_homework(homework_dict)  # Передаємо homework_dict у функцію save_homework
+        save_homework_to_github(homework_dict)  # Також зберігаємо на GitHub
+        bot.reply_to(message, "✅ Домашнє завдання оновлено успішно.")
+        user_state.pop(user_id, None)
+    else:
+        bot.reply_to(message, "Помилка: не знайдено домашнє завдання для редагування.")
+    
     bot.reply_to(
         message,
         "Виберіть одну з опцій нижче:",
         reply_markup=create_main_keyboard(),
         parse_mode='HTML'
     )
+
 
 
 @bot.message_handler(func=lambda message: message.text == "Описати питання")
