@@ -4,6 +4,7 @@ from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 import requests
 import base64
+import json  # Необхідний імпорт
 from datetime import datetime
 
 TOKEN = '7805329225:AAFu4s5jMAlalFNCCM-0FoSqm7L2Q_7eGQY'
@@ -61,7 +62,7 @@ def save_homework_to_github(homework_dict):
     content = json.dumps(homework_dict, ensure_ascii=False, indent=4)
     
     # Get SHA of the file to update it on GitHub
-    response = requests.get(API_URL + file_path, headers={
+    response = requests.get(API_URL, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     })
     
@@ -81,7 +82,7 @@ def save_homework_to_github(homework_dict):
         data['sha'] = sha
     
     # Update or create file on GitHub
-    response = requests.put(API_URL + file_path, headers={
+    response = requests.put(API_URL, headers={
         'Authorization': f'token {GITHUB_TOKEN}'
     }, json=data)
     
@@ -96,7 +97,6 @@ homework_dict = load_homework()
 # Save homework to the database and GitHub
 save_homework(homework_dict)
 save_homework_to_github(homework_dict)
-
 
 # Create the keyboards
 def create_main_keyboard():
