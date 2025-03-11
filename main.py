@@ -16,9 +16,9 @@ OWNER_ID = 5223717297
 SECOND_OWNER_ID = 5223717297
 SUPPORT_ID = 5223717297
 
-pp = Flask(__name__)
+app = Flask(__name__)
 
-@pp.route('/webhook', methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
     json_str = request.get_data().decode('UTF-8')
     update = telebot.types.Update.de_json(json_str)
