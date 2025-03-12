@@ -6,7 +6,7 @@ TOKEN = "7805329225:AAEAyeS_6Yq0eQPNBSH66l_5HcTJk4Dfqds"
 OWNER_ID = 5223717297
 GROUP_ID = -1001992854284
 ADMIN_IDS = {5223717297, 1071290377}
-WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'  # Замініть на ваш правильний URL
+WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -19,9 +19,10 @@ def webhook():
         bot.process_new_updates([telebot.types.Update.de_json(update)])
     return 'OK', 200
 
-def set_webhook():
-    bot.remove_webhook()  # Видалення старих Webhook, якщо вони є
-    bot.set_webhook(url=WEBHOOK_URL)  # Встановлення нового Webhook
+def set_webhook_or_polling():
+    bot.remove_webhook() 
+    bot.set_webhook(url=WEBHOOK_URL)  
+
 
 homework_dict = {
     "фізика 🪐": "",
@@ -173,5 +174,6 @@ def choose_subjects_for_group(message):
 
 
 if __name__ == "__main__":
-    set_webhook()  # Викликаємо налаштування Webhook
-    app.run(host="0.0.0.0", port=8443, ssl_context=('cert.pem', 'key.pem'))  # Запускаємо Flask сервер з SSL
+    set_webhook_or_polling()
+    # Запускаємо Flask сервер без SSL
+    app.run(host="0.0.0.0", port=8443)
