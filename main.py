@@ -11,6 +11,19 @@ WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
+# Webhook для отримання повідомлень
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    update = request.get_json()
+    if update:
+        bot.process_new_updates([telebot.types.Update.de_json(update)])
+    return 'OK', 200
+
+def set_webhook_or_polling():
+    bot.remove_webhook() 
+    bot.set_webhook(url=WEBHOOK_URL)  
+
+
 homework_dict = {
     "фізика 🪐": "",
     "фізкультура 🏋️‍♂️": "",
@@ -159,22 +172,8 @@ def choose_subjects_for_group(message):
     else:
         bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
-# Webhook для отримання повідомлень
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    update = request.get_json()
-    if update:
-        bot.process_new_updates([telebot.types.Update.de_json(update)])
-    return 'OK', 200
 
-# Встановлення Webhook або Polling
-def set_webhook_or_polling():
-    bot.remove_webhook()  # Видаляємо існуючий webhook
-    bot.set_webhook(url=WEBHOOK_URL)  # Встановлюємо новий webhook
-
-    # Якщо хочете використовувати polling замість webhook:
-    # bot.polling(none_stop=True)
 
 if __name__ == "__main__":
     set_webhook_or_polling()
-    app.run(host="0.0.0.0", port=8443)  # Без використання SSL
+    app.run(host="0.0.0.0", port=8443)  
