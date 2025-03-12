@@ -14,6 +14,14 @@ HOMEWORK_FILE = "homework.json"
 ADMIN_IDS = {5223717297, 1071290377, 1234567890}
 USER_ID = 5223717297
 
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    update = request.get_json()
+    if update:
+        bot.process_new_updates([telebot.types.Update.de_json(update)])
+    return 'OK', 200
+
+
 # Завантаження ДЗ
 def load_homework():
     if os.path.exists(HOMEWORK_FILE):
@@ -115,12 +123,6 @@ def send_homework_tomorrow(message):
         bot.reply_to(message, "✅ ДЗ на завтра надіслано в групу.")
 
 # Webhook для отримання повідомлень
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    update = request.get_json()
-    if update:
-        bot.process_new_updates([telebot.types.Update.de_json(update)])
-    return 'OK', 200
 
 # Встановлення Webhook
 def set_webhook():
