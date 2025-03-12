@@ -82,7 +82,6 @@ def enter_homework(message):
         return
 
     if message.text in homework_dict:
-        # Видалення старого ДЗ перед редагуванням
         homework_dict[message.text] = ""
         bot.send_message(message.chat.id, f"🔹 Старе ДЗ для {message.text} було видалено. Введіть нове ДЗ:",
                          reply_markup=telebot.types.ReplyKeyboardRemove())
@@ -119,7 +118,7 @@ def send_homework_to_group(message):
         bot.send_message(message.chat.id, "🔹 Оберіть предмети для відправки (натискайте по черзі):",
                          reply_markup=create_subjects_keyboard())
         user_state[message.from_user.id] = "choosing_subjects"
-        selected_subjects[message.from_user.id] = []  # Ініціалізація для вибору предметів
+        selected_subjects[message.from_user.id] = []
 
 @bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "choosing_subjects")
 def choose_subjects_for_group(message):
@@ -141,7 +140,6 @@ def choose_subjects_for_group(message):
             message_text += "_______________________\n"
         message_text += "Більше ДЗ тут: <a href='https://sites.google.com/view/ip31253456'>https://sites.google.com/view/ip31253456</a>"
 
-
         bot.send_message(message.chat.id, message_text, parse_mode="HTML")
         bot.send_message(GROUP_ID, message_text, parse_mode="HTML")
 
@@ -161,7 +159,6 @@ def choose_subjects_for_group(message):
     else:
         bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
-
 # Webhook для отримання повідомлень
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
@@ -170,7 +167,6 @@ def webhook():
         bot.process_new_updates([telebot.types.Update.de_json(update)])
     return 'OK', 200
 
-
 # Встановлення Webhook або Polling
 def set_webhook_or_polling():
     bot.remove_webhook()  # Видаляємо існуючий webhook
@@ -178,7 +174,6 @@ def set_webhook_or_polling():
 
     # Якщо хочете використовувати polling замість webhook:
     # bot.polling(none_stop=True)
-
 
 if __name__ == "__main__":
     set_webhook_or_polling()
