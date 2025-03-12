@@ -1,118 +1,166 @@
 import telebot
 from flask import Flask, request
 import json
-import os
 
-TOKEN = '7805329225:7805329225:AAEwl-2XjKmfCQK0aZFJy-pdOyZ3ImlWmj0'  # Замініть на свій токен
-WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'  # Замініть на свій URL
-GROUP_ID = -1001992854284  # Замініть на ID вашої групи
+TOKEN = "7805329225:AAHbjEMHDKLejKQWRUvC3jePYK2g8yrm3Ec"
+OWNER_ID = 5223717297
+GROUP_ID = -1001992854284
+ADMIN_IDS = {5223717297, 1071290377}
+WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
-HOMEWORK_FILE = "homework.json"
-ADMIN_IDS = {5223717297, 1071290377, 1234567890}
-USER_ID = 5223717297
+homework_dict = {
+    "фізика 🪐": "",
+    "фізкультура 🏋️‍♂️": "",
+    "географія 🌍": "",
+    "технології ⚙️": "",
+    "історія україни ⚔️": "",
+    "зарубіжна література 📚": "",
+    "всесвітня історія ⚔️": "",
+    "хімія 🧪": "",
+    "інформатика 💻": "",
+    "захист україни 🪖": "",
+    "українська мова 📝": "",
+    "українська література 📖": "",
+    "математика ➗": "",
+    "біологія 🦠": "",
+    "іноземна мова(лин)": "",
+    "іноземна мова(ляшенко)": ""
+}
 
-# Завантаження ДЗ
-def load_homework():
-    if os.path.exists(HOMEWORK_FILE):
-        with open(HOMEWORK_FILE, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    return {}
+try:
+    with open("homework.json", "r", encoding="utf-8") as file:
+        homework_dict.update(json.load(file))
+except FileNotFoundError:
+    pass
 
-homework_dict = load_homework()
 user_state = {}
+user_homework = {}
+selected_subjects = {}
 
-# Збереження ДЗ
 def save_homework():
-    try:
-        with open(HOMEWORK_FILE, 'w', encoding='utf-8') as file:
-            json.dump(homework_dict, file, ensure_ascii=False, indent=4)
-    except Exception as e:
-        bot.send_message(USER_ID, f"❌ Помилка збереження ДЗ: {e}")
+    with open("homework.json", "w", encoding="utf-8") as file:
+        json.dump(homework_dict, file, ensure_ascii=False, indent=4)
+    with open("homework.json", "rb") as file:
+        bot.send_document(OWNER_ID, file)
 
-# Головне меню
-def create_main_keyboard():
-    keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add(telebot.types.KeyboardButton("Редагувати ДЗ ✏️"))
-    keyboard.add(telebot.types.KeyboardButton("Надіслати ДЗ на завтра 📤"))
-    return keyboard
-
-# Меню предметів
 def create_subjects_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    for subject in homework_dict.keys():
+    for subject in homework_dict:
         keyboard.add(telebot.types.KeyboardButton(subject))
-    keyboard.add(telebot.types.KeyboardButton("Назад ⬅️"))
+    keyboard.add(telebot.types.KeyboardButton("✅ Відправити в групу"), telebot.types.KeyboardButton("Назад ⬅️"))
     return keyboard
 
-# Старт
-@bot.message_handler(commands=["start"])
-def start(message):
-    if message.chat.type == 'private' and message.from_user.id in ADMIN_IDS:
-        bot.reply_to(message, "🔹 Оберіть опцію:", reply_markup=create_main_keyboard())
+def create_main_keyboard():
+    keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add("Редагувати ДЗ ✏️", "ДЗ в групу 📩")
+    return keyboard
 
-# Редагування ДЗ
+def create_finish_keyboard():
+    keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add("✅ Завершити", "➕ Додати ще")
+    return keyboard
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    bot.send_message(message.chat.id, "🔹 Вітаю! Оберіть дію:", reply_markup=create_main_keyboard())
+
 @bot.message_handler(func=lambda message: message.text == "Редагувати ДЗ ✏️")
 def edit_homework(message):
     if message.from_user.id in ADMIN_IDS:
-        bot.reply_to(message, "🔹 Оберіть предмет:", reply_markup=create_subjects_keyboard())
-        user_state[message.from_user.id] = "editing_homework"
+        bot.send_message(message.chat.id, "🔹 Оберіть предмет для редагування:", reply_markup=create_subjects_keyboard())
+        user_state[message.from_user.id] = "choosing_subject"
+
+@bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "choosing_subject")
+def enter_homework(message):
+    user_id = message.from_user.id
+    if message.text == "Назад ⬅️":
+        bot.send_message(message.chat.id, "🔙 Повертаємося в головне меню.", reply_markup=create_main_keyboard())
+        user_state.pop(user_id, None)
+        return
+
+    if message.text in homework_dict:
+        # Видалення старого ДЗ перед редагуванням
+        homework_dict[message.text] = ""
+        bot.send_message(message.chat.id, f"🔹 Старе ДЗ для {message.text} було видалено. Введіть нове ДЗ:",
+                         reply_markup=telebot.types.ReplyKeyboardRemove())
+        user_state[user_id] = "editing_homework"
+        user_homework[user_id] = message.text
+    else:
+        bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
 @bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "editing_homework")
-def select_subject_to_edit(message):
+def save_homework_entry(message):
+    user_id = message.from_user.id
+    subject = user_homework[user_id]
+    homework_dict[subject] += ("\n\n" if homework_dict[subject] else "") + message.text
+    bot.send_message(message.chat.id, "✅ ДЗ додано. Що робимо далі?", reply_markup=create_finish_keyboard())
+    user_state[user_id] = "finish_or_add"
+
+@bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "finish_or_add")
+def finish_or_add_more(message):
+    user_id = message.from_user.id
+    if message.text == "✅ Завершити":
+        save_homework()
+        bot.send_message(message.chat.id, "✅ ДЗ збережено.", reply_markup=create_main_keyboard())
+        user_state.pop(user_id, None)
+        user_homework.pop(user_id, None)
+    elif message.text == "➕ Додати ще":
+        bot.send_message(message.chat.id, "✏️ Введіть додаткове ДЗ:", reply_markup=telebot.types.ReplyKeyboardRemove())
+        user_state[user_id] = "editing_homework"
+    else:
+        bot.send_message(message.chat.id, "⚠️ Оберіть дію зі списку.")
+
+@bot.message_handler(func=lambda message: message.text == "ДЗ в групу 📩")
+def send_homework_to_group(message):
+    if message.from_user.id in ADMIN_IDS:
+        bot.send_message(message.chat.id, "🔹 Оберіть предмети для відправки (натискайте по черзі):",
+                         reply_markup=create_subjects_keyboard())
+        user_state[message.from_user.id] = "choosing_subjects"
+        selected_subjects[message.from_user.id] = []  # Ініціалізація для вибору предметів
+
+@bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "choosing_subjects")
+def choose_subjects_for_group(message):
+    user_id = message.from_user.id
     if message.text == "Назад ⬅️":
-        bot.reply_to(message, "🔙 Повертаємося в головне меню.", reply_markup=create_main_keyboard())
-        user_state.pop(message.from_user.id, None)
+        bot.send_message(message.chat.id, "🔙 Повертаємося в головне меню.", reply_markup=create_main_keyboard())
+        user_state.pop(user_id, None)
+        selected_subjects.pop(user_id, None)
+        return
+
+    if message.text == "✅ Відправити в групу":
+        if user_id not in selected_subjects or not selected_subjects[user_id]:
+            bot.send_message(message.chat.id, "⚠️ Ви не обрали жодного предмета.")
+            return
+
+        message_text = "💬 <b>Домашнє завдання:</b>\n\n"
+        for subject in selected_subjects[user_id]:
+            message_text += f"\n🧷 <b>{subject}:</b>\n{homework_dict.get(subject, '❌ Немає завдання')}\n"
+            message_text += "_______________________\n"
+        message_text += "Більше ДЗ тут: <a href='https://sites.google.com/view/ip31253456'>https://sites.google.com/view/ip31253456</a>"
+
+
+        bot.send_message(message.chat.id, message_text, parse_mode="HTML")
+        bot.send_message(GROUP_ID, message_text, parse_mode="HTML")
+
+        bot.send_message(message.chat.id, "✅ ДЗ відправлено в групу.", reply_markup=create_main_keyboard())
+        user_state.pop(user_id, None)
+        selected_subjects.pop(user_id, None)
         return
 
     subject = message.text
     if subject in homework_dict:
-        bot.reply_to(message, f"✏️ Введіть нове ДЗ для {subject} (попереднє: {homework_dict[subject]}):")
-        user_state[message.from_user.id] = {"subject": subject}
-        bot.register_next_step_handler(message, save_edited_homework)
+        if user_id not in selected_subjects:
+            selected_subjects[user_id] = []
+
+        if subject not in selected_subjects[user_id]:
+            selected_subjects[user_id].append(subject)
+            bot.send_message(message.chat.id, f"✅ {subject} додано до списку.")
     else:
-        bot.reply_to(message, "⚠️ Невідомий предмет. Спробуйте ще раз.")
+        bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
-def save_edited_homework(message):
-    user_id = message.from_user.id
-    subject = user_state.get(user_id, {}).get("subject")
-
-    if subject:
-        if subject in homework_dict and homework_dict[subject]:
-            homework_dict[subject] += f"\n{message.text}"
-        else:
-            homework_dict[subject] = message.text
-        save_homework()
-
-        keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-        keyboard.add(telebot.types.KeyboardButton("Додати ще"), telebot.types.KeyboardButton("Завершити редагування"))
-        bot.reply_to(message, f"✅ ДЗ для {subject} оновлено. Що далі?", reply_markup=keyboard)
-    else:
-        bot.reply_to(message, "⚠️ Помилка редагування.")
-
-@bot.message_handler(func=lambda message: message.text in ["Додати ще", "Завершити редагування"])
-def edit_more_or_finish(message):
-    user_id = message.from_user.id
-    if message.text == "Додати ще":
-        bot.reply_to(message, "🔹 Оберіть предмет:", reply_markup=create_subjects_keyboard())
-        user_state[user_id] = "editing_homework"
-    elif message.text == "Завершити редагування":
-        bot.reply_to(message, "✅ Редагування завершено.", reply_markup=create_main_keyboard())
-        user_state.pop(user_id, None)
-
-# Надсилання ДЗ у групу
-@bot.message_handler(func=lambda message: message.text == "Надіслати ДЗ на завтра 📤")
-def send_homework_tomorrow(message):
-    if message.from_user.id in ADMIN_IDS:
-        if not homework_dict:
-            bot.send_message(GROUP_ID, "⚠️ Домашнього завдання немає.")
-            return
-
-        homework_text = "\n\n".join([f"📚 <b>{subject}</b>: {hw}" for subject, hw in homework_dict.items()])
-        bot.send_message(GROUP_ID, f"📢 <b>Домашнє завдання на завтра:</b>\n\n{homework_text}", parse_mode='HTML')
-        bot.reply_to(message, "✅ ДЗ на завтра надіслано в групу.")
 
 # Webhook для отримання повідомлень
 @app.route(f'/{TOKEN}', methods=['POST'])
@@ -122,13 +170,15 @@ def webhook():
         bot.process_new_updates([telebot.types.Update.de_json(update)])
     return 'OK', 200
 
+
 # Встановлення Webhook або Polling
 def set_webhook_or_polling():
     bot.remove_webhook()  # Видаляємо існуючий webhook
     bot.set_webhook(url=WEBHOOK_URL)  # Встановлюємо новий webhook
-    
+
     # Якщо хочете використовувати polling замість webhook:
     # bot.polling(none_stop=True)
+
 
 if __name__ == "__main__":
     set_webhook_or_polling()
