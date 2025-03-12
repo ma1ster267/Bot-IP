@@ -3,16 +3,16 @@ from flask import Flask, request
 import json
 import os
 
-TOKEN = '7805329225:AAFhcb1Hngf6lMWag9g9Ttycvpu1TdiUdJY'  # Замініть на свій токен
-WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'  # Замініть на свій URL
-GROUP_ID = -1001992854284  # Замініть на ID вашої групи
+TOKEN = '7805329225:AAEwl-2XjKmfCQK0aZFJy-pdOyZ3ImlWmj0'  # Замініть на свій токен
+WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'  # Замініть на ваш URL
+GROUP_ID = -1001992854284   # Замініть на ID вашої групи
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
 
 HOMEWORK_FILE = "homework.json"
-ADMIN_IDS = {5223717297, 1071290377, 1234567890}
-USER_ID = 5223717297
+ADMIN_IDS = {5223717297, 1071290377, 1234567890}  # Замість цього додайте ваші ID
+USER_ID = 5223717297  # Ваш ID або ID адміністраторів
 
 # Завантаження ДЗ
 def load_homework():
