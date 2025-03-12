@@ -74,7 +74,7 @@ def create_subjects_keyboard():
 
 def create_main_keyboard():
     keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.add("Редагувати ДЗ ✏️", "ДЗ в групу 📩")
+    keyboard.add("Редагувати ДЗ ✏️", "ДЗ в групу 📩", "Переглянути ДЗ 👀")
     return keyboard
 
 def create_finish_keyboard():
@@ -177,6 +177,32 @@ def choose_subjects_for_group(message):
             bot.send_message(message.chat.id, f"✅ {subject} додано до списку.")
     else:
         bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
+
+@bot.message_handler(func=lambda message: message.text == "Переглянути ДЗ 👀" and message.from_user.id in ADMIN_IDS)
+def view_homework(message):
+    # Check if the user is an admin
+    if message.from_user.id in ADMIN_IDS:
+        bot.send_message(message.chat.id, "🔹 Оберіть предмет для перегляду:", reply_markup=create_subjects_keyboard())
+        user_state[message.from_user.id] = "choosing_subject_for_view"
+
+
+@bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "choosing_subject_for_view")
+def send_homework_for_subject(message):
+    user_id = message.from_user.id
+    subject = message.text
+
+    if subject == "Назад ⬅️":
+        bot.send_message(message.chat.id, "🔙 Повертаємося в головне меню.", reply_markup=create_main_keyboard())
+        user_state.pop(user_id, None)
+        return
+
+    if subject in homework_dict:
+        homework = homework_dict[subject] if homework_dict[subject] else "❌ Немає завдання"
+        bot.send_message(message.chat.id, f"💬 <b>Домашнє завдання з {subject}:</b>\n\n{homework}", parse_mode="HTML", reply_markup=create_main_keyboard())
+        user_state.pop(user_id, None)
+    else:
+        bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
+
 
 
 # Запуск програми
