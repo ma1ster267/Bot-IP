@@ -1,9 +1,8 @@
 import telebot
-import pip
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 import json
 import os
 from datetime import datetime
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
 TOKEN = '7805329225:AAEZv9BQnQ6tKScDxMS67yhquhFUycvwLyU'
 bot = telebot.TeleBot(TOKEN)
@@ -133,8 +132,6 @@ def bot_info(message):
         "📬 Якщо у вас є пропозиції щодо покращення або ви знайшли помилки, звертайтеся до розробника!",
         parse_mode='HTML'
     )
-
-
 
 
 @bot.message_handler(func=lambda message: message.text == "Для адмінів")
