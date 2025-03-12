@@ -185,7 +185,12 @@ def choose_subjects_for_group(message):
         bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
 
+# Запускаємо бота через Webhook без polling
+def run_bot():
+    bot.remove_webhook()
+    bot.set_webhook(url=WEBHOOK_URL)
+
 # Запуск програми
 if __name__ == "__main__":
-    threading.Thread(target=run_bot, daemon=True).start()
+    run_bot()
     app.run(host="0.0.0.0", port=8080)
