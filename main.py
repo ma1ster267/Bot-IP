@@ -1,13 +1,12 @@
 import telebot
 from flask import Flask, request
 import json
-import threading
 
-TOKEN = "7805329225:AAExuY50h5TYBKfmsV-MA23wL4xK4mnMeqY"
+TOKEN = "7805329225:AAHFhRGymmeNrDK3s18qtbIXTKHk4PHXlWs"
 OWNER_ID = 5223717297
 GROUP_ID = -1001992854284
 ADMIN_IDS = {5223717297, 1071290377}
-WEBHOOK_URL = 'https://bot-ip-11111111111111.onrender.com' 
+WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com/' + TOKEN
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
@@ -29,11 +28,6 @@ def webhook():
 def set_webhook():
     bot.remove_webhook()
     bot.set_webhook(url=WEBHOOK_URL)
-
-# Запускаємо бота в окремому потоці
-def run_bot():
-    set_webhook()
-    bot.infinity_polling()
     
 
 homework_dict = {
@@ -185,12 +179,7 @@ def choose_subjects_for_group(message):
         bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
 
-# Запускаємо бота через Webhook без polling
-def run_bot():
-    bot.remove_webhook()
-    bot.set_webhook(url=WEBHOOK_URL)
-
 # Запуск програми
 if __name__ == "__main__":
-    run_bot()
+    set_webhook()
     app.run(host="0.0.0.0", port=8080)
