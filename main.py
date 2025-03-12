@@ -177,4 +177,4 @@ def set_webhook_or_polling():
 
 if __name__ == "__main__":
     set_webhook_or_polling()
-    app.run(host="0.0.0.0", port=8443, ssl_context=("cert.pem", "key.pem"))  # Використовуємо HTTPS
+    app.run(host="0.0.0.0", port=8443)  # Без використання SSL
