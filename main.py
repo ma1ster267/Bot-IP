@@ -3,7 +3,7 @@ from flask import Flask, request
 import json
 import os
 
-TOKEN = '7805329225:AAEwl-2XjKmfCQK0aZFJy-pdOyZ3ImlWmj0'  # Замініть на свій токен
+TOKEN = '7805329225:7805329225:AAEwl-2XjKmfCQK0aZFJy-pdOyZ3ImlWmj0'  # Замініть на свій токен
 WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'  # Замініть на свій URL
 GROUP_ID = -1001992854284  # Замініть на ID вашої групи
 
@@ -114,9 +114,22 @@ def send_homework_tomorrow(message):
         bot.send_message(GROUP_ID, f"📢 <b>Домашнє завдання на завтра:</b>\n\n{homework_text}", parse_mode='HTML')
         bot.reply_to(message, "✅ ДЗ на завтра надіслано в групу.")
 
-# Якщо ви хочете використовувати polling замість webhook, використовуйте цей метод:
+# Webhook для отримання повідомлень
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    update = request.get_json()
+    if update:
+        bot.process_new_updates([telebot.types.Update.de_json(update)])
+    return 'OK', 200
+
+# Встановлення Webhook або Polling
+def set_webhook_or_polling():
+    bot.remove_webhook()  # Видаляємо існуючий webhook
+    bot.set_webhook(url=WEBHOOK_URL)  # Встановлюємо новий webhook
+    
+    # Якщо хочете використовувати polling замість webhook:
+    # bot.polling(none_stop=True)
+
 if __name__ == "__main__":
-    bot.polling(none_stop=True)  # Замініть на polling для тестування
-    # Якщо ви хочете використовувати webhook, залиште це:
-    # set_webhook()
-    # app.run(host="0.0.0.0", port=8443, ssl_context=("cert.pem", "key.pem"))
+    set_webhook_or_polling()
+    app.run(host="0.0.0.0", port=8443, ssl_context=("cert.pem", "key.pem"))  # Використовуємо HTTPS
