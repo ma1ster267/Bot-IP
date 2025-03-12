@@ -3,7 +3,7 @@ from flask import Flask, request
 import json
 import os
 
-TOKEN = '7805329225:7805329225:AAEwl-2XjKmfCQK0aZFJy-pdOyZ3ImlWmj0'  # Замініть на свій токен
+TOKEN = '7805329225:AAEwl-2XjKmfCQK0aZFJy-pdOyZ3ImlWmj0'  # Замініть на ваш правильний токен
 WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com'  # Замініть на свій URL
 GROUP_ID = -1001992854284  # Замініть на ID вашої групи
 
