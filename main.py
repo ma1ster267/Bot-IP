@@ -84,7 +84,10 @@ def create_finish_keyboard():
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "🔹 Вітаю! Оберіть дію:", reply_markup=create_main_keyboard())
+    if message.from_user.id in ADMIN_IDS:
+        bot.send_message(message.chat.id, "🔹 Вітаю! Оберіть дію:", reply_markup=create_main_keyboard())
+    else:
+        bot.send_message(message.chat.id, "❌ У вас немає доступу до цього бота.")
 
 @bot.message_handler(func=lambda message: message.text == "Редагувати ДЗ ✏️")
 def edit_homework(message):
