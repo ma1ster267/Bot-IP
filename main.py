@@ -178,12 +178,10 @@ def choose_subjects_for_group(message):
     else:
         bot.send_message(message.chat.id, "⚠️ Невідомий предмет. Спробуйте ще раз.")
 
-@bot.message_handler(func=lambda message: message.text == "Переглянути ДЗ 👀" and message.from_user.id in ADMIN_IDS)
+@bot.message_handler(func=lambda message: message.text == "Переглянути ДЗ 👀")
 def view_homework(message):
-    # Check if the user is an admin
-    if message.from_user.id in ADMIN_IDS:
-        bot.send_message(message.chat.id, "🔹 Оберіть предмет для перегляду:", reply_markup=create_subjects_keyboard())
-        user_state[message.from_user.id] = "choosing_subject_for_view"
+    bot.send_message(message.chat.id, "🔹 Оберіть предмет для перегляду:", reply_markup=create_subjects_keyboard())
+    user_state[message.from_user.id] = "choosing_subject_for_view"
 
 
 @bot.message_handler(func=lambda message: user_state.get(message.from_user.id) == "choosing_subject_for_view")
