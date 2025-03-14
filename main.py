@@ -2,11 +2,11 @@ import telebot
 from flask import Flask, request
 import json
 
-TOKEN = "7805329225:AAExuY50h5TYBKfmsV-MA23wL4xK4mnMeqY"
+TOKEN = "7805329225:AAFH07IwY8Phw9tOWfpO4ZQwfiAZ9dgCbrk"
 OWNER_ID = 5223717297
 GROUP_ID = -1002207273836
 ADMIN_IDS = {5223717297, 1071290377, 1474741889}
-WEBHOOK_URL = 'https://bot-ip-odhy.onrender.com/' + TOKEN
+WEBHOOK_URL = 'https://ma1ster.onrender.com' 
 
 bot = telebot.TeleBot(TOKEN)
 app = Flask(__name__)
